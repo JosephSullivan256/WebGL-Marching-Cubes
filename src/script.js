@@ -10,7 +10,7 @@ function main(){
 		return;
 	}
 	
-	var sphereDensityField = sphereDensityField();
+	var densityField = sphereDensityField();
 }
 
 function drawScene(gl,scene){
@@ -21,15 +21,17 @@ function drawScene(gl,scene){
 
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-	scene.render();
+	scene.render(gl);
+
+	
 }
 
 function Scene(globalUniforms,models=[]){
 	this.globalUniforms = globalUniforms;
 	this.models = models;
-	this.render = function(){
+	this.render = function(gl){
 		models.array.forEach(model => {
-			model.render(globalUniforms);
+			model.render(gl,globalUniforms);
 		});
 	}
 }
@@ -49,8 +51,11 @@ function sphereDensityField(width=9){
 	return density;
 }
 
-function MarchingCubesModel(densityField){
-	//TODO: 
+function MarchingCubesModel(densityField0){
+	this.densityField = densityField0;
+	this.render = function(gl,globalUniforms){
+		
+	}
 }
 
 /*
