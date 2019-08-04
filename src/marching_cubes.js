@@ -1,4 +1,24 @@
+function MarchingCubesModel(densityField0){
+	this.densityField = densityField0;
+	this.render = function(gl,globalUniforms){
+		
+	}
+}
 
+function sphereDensityField(width=9){
+	var density = [];
+	var width = 9;
+	for(var x = 0; x < width; x++){
+		density[x] = [];
+		for(var y = 0; y < width; y++){
+			density[x][y] = [];
+			for(var z = 0; z < width; z++){
+				density[x][y][z]=1.0/(1.0+Math.pow(x-width/2,2)+Math.pow(y-width/2,2)+Math.pow(z-width/2,2));
+			}
+		}
+	}
+	return density;
+}
 
 
 var triangle_table = [

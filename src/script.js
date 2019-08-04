@@ -10,7 +10,30 @@ function main(){
 		return;
 	}
 	
-	var densityField = sphereDensityField();
+	//var densityField = sphereDensityField();
+	var model = new TestModel();
+	model.init(gl);
+	var scene = new Scene(new GlobalUniforms(gl),[model]);
+	drawScene(gl,scene);
+
+	var dt = 0;
+	var then = 0;
+	
+	function loop(now){
+		now *= 0.001;
+		dt = now-then;
+		then = now;
+
+		updateScene(scene,dt);
+		drawScene(gl,scene);
+		window.requestAnimationFrame(loop);
+	}
+	window.requestAnimationFrame(loop);
+}
+
+function updateScene(scene,dt){
+	scene.update(dt);
+	scene.globalUniforms.camera.rotate([dt,0.0]);
 }
 
 function drawScene(gl,scene){
@@ -20,42 +43,59 @@ function drawScene(gl,scene){
 	gl.depthFunc(gl.LEQUAL);
 
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
+	
 	scene.render(gl);
 
-	
+	var testModel = new TestModel();
 }
 
 function Scene(globalUniforms,models=[]){
 	this.globalUniforms = globalUniforms;
 	this.models = models;
+	this.update = function(dt){
+		models.forEach(model => model.update(dt));
+	}
 	this.render = function(gl){
-		models.array.forEach(model => {
+		models.forEach(model => {
 			model.render(gl,globalUniforms);
 		});
 	}
 }
 
-function sphereDensityField(width=9){
-	var density = [];
-	var width = 9;
-	for(var x = 0; x < width; x++){
-		density[x] = [];
-		for(var y = 0; y < width; y++){
-			density[x][y] = [];
-			for(var z = 0; z < width; z++){
-				density[x][y][z]=1.0/(1.0+Math.pow(x-width/2,2)+Math.pow(y-width/2,2)+Math.pow(z-width/2,2));
-			}
-		}
-	}
-	return density;
-}
+function GlobalUniforms(gl){
+	// Create a perspective matrix, a special matrix that is
+	// used to simulate the distortion of perspective in a camera.
+	// Our field of view is 45 degrees, with a width/height
+	// ratio that matches the display size of the canvas
+	// and we only want to see objects between 0.1 units
+	// and 100 units away from the camera.
 
-function MarchingCubesModel(densityField0){
-	this.densityField = densityField0;
-	this.render = function(gl,globalUniforms){
-		
-	}
+	const fieldOfView = 45 * Math.PI / 180;   // in radians
+	const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
+	const zNear = 0.1;
+	const zFar = 100.0;
+	this.projectionMatrix = mat4.create();
+
+	// note: glmatrix.js always has the first argument
+	// as the destination to receive the result.
+	mat4.perspective(this.projectionMatrix,
+		fieldOfView,
+		aspect,
+		zNear,
+		zFar);
+
+	// Set the drawing position to the "identity" point, which is
+	// the center of the scene.
+	this.modelViewMatrix = mat4.create();
+
+	// Now move the drawing position a bit to where we want to
+	// start drawing the square.
+
+	mat4.translate(this.modelViewMatrix,     // destination matrix
+		this.modelViewMatrix,     // matrix to translate
+		[-0.0, 0.0, -6.0]);  // amount to translate
+
+	this.camera = new OrbitingCamera([-0.0,0.0,-6.0],[0.0,0.0,0.0]);
 }
 
 /*
