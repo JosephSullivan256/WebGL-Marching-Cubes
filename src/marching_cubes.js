@@ -1,27 +1,4 @@
-function MarchingCubesModel(densityField0){
-	this.densityField = densityField0;
-	this.render = function(gl,globalUniforms){
-		
-	}
-}
-
-function sphereDensityField(width=9){
-	var density = [];
-	var width = 9;
-	for(var x = 0; x < width; x++){
-		density[x] = [];
-		for(var y = 0; y < width; y++){
-			density[x][y] = [];
-			for(var z = 0; z < width; z++){
-				density[x][y][z]=1.0/(1.0+Math.pow(x-width/2,2)+Math.pow(y-width/2,2)+Math.pow(z-width/2,2));
-			}
-		}
-	}
-	return density;
-}
-
-
-var triangle_table = [
+var triTable = [
 	[-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
 	[0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
 	[0, 1, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
@@ -279,3 +256,294 @@ var triangle_table = [
 	[0, 3, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
 	[-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
 ];
+var vertTable=[
+	[0,0,0],
+	[0,0,1],
+	[1,0,1],
+	[1,0,0],
+	[0,1,0],
+	[0,1,1],
+	[1,1,1],
+	[1,1,0],
+];
+var edgeTable=[
+	[0,0,0.5],
+	[0.5,0,1],
+	[1,0,0.5],
+	[0.5,0,0],
+	[0,1,0.5],
+	[0.5,1,1],
+	[1,1,0.5],
+	[0.5,1,0],
+	[0,0.5,0],
+	[0,0.5,1],
+	[1,0.5,1],
+	[1,0.5,0],
+]
+
+function MarchingCubesModel(generator0){
+	this.generator = generator0;
+
+	const src = {
+		vs: `
+			//precision highp float;
+
+			attribute vec3 aVertexPosition;
+			attribute vec3 aVertexNormal;
+
+			varying vec3 pos;
+			varying vec3 normal;
+
+			uniform mat4 uModelViewMatrix;
+			uniform mat4 uNormalMatrix;
+			uniform mat4 uProjectionMatrix;
+			
+			void main() {
+				pos = aVertexPosition;
+				normal = (uNormalMatrix * vec4(aVertexNormal,0.0)).xyz;
+				gl_Position = uProjectionMatrix * uModelViewMatrix * vec4(aVertexPosition,1.0);
+			}
+		`,
+		fs: `
+			precision mediump float; //sets medium precision (should be supported on pretty much all mobile)
+			
+			varying vec3 pos;
+			varying vec3 normal;
+
+			void main(){
+				vec3 greenColor = vec3(90.0,140.0,70.0)/255.0;
+				vec3 brownColor = vec3(70.0,50.0,40.0)/255.0;
+				float percentGreen = (dot(normal,vec3(0.0,1.0,0.0))+1.0)/2.0;
+				vec3 color = mix(greenColor,brownColor,percentGreen);
+
+				vec3 lightDir = vec3(-1.0/3.0,-2.0/3.0,-2.0/3.0);
+				gl_FragColor = vec4((max(dot(normal, lightDir), 0.0)+0.1)*color,1.0);
+			}
+		`
+	};
+	
+	this.programInfo;
+	this.buffers;
+	this.time = 0;
+	this.num = 0;
+	this.threshold = 0.1;
+
+	this.genTriangles = function(threshold=0,scaleOffset=1){
+		var positions = [];
+		var normals = [];
+		var indices = [];
+		var offset = [scaleOffset*this.density.length/2.0,scaleOffset*this.density[0].length/2.0,scaleOffset*this.density[0][0].length/2.0];
+		var count = 0;
+		for(var x = 0; x < this.density.length-1; x++){
+			for(var y = 0; y < this.density[0].length-1; y++){
+				for(var z = 0; z < this.density[0][0].length-1; z++){
+					var a0 = this.density[x][y][z]; //bottom, left, close
+					var a1 = this.density[x][y][z+1];
+					var a2 = this.density[x+1][y][z+1];
+					var a3 = this.density[x+1][y][z];
+					var a4 = this.density[x][y+1][z]; //top, left, close
+					var a5 = this.density[x][y+1][z+1];
+					var a6 = this.density[x+1][y+1][z+1];
+					var a7 = this.density[x+1][y+1][z];
+					var index = (
+						+(a0>threshold)
+						+2*+(a1>threshold)
+						+4*+(a2>threshold)
+						+8*+(a3>threshold)
+						+16*+(a4>threshold)
+						+32*+(a5>threshold)
+						+64*+(a6>threshold)
+						+128*+(a7>threshold)
+					);
+					//console.log(index);
+					for(var i = 0; i < triTable[index].length && triTable[index][i]>-1; i+=3){
+						var e1 = edgeTable[triTable[index][i]];
+						var e2 = edgeTable[triTable[index][i+1]];
+						var e3 = edgeTable[triTable[index][i+2]];
+						positions.push((e1[0]+x)*scaleOffset-offset[0],(e1[1]+y)*scaleOffset-offset[1],(e1[2]+z)*scaleOffset-offset[2]);
+						positions.push((e2[0]+x)*scaleOffset-offset[0],(e2[1]+y)*scaleOffset-offset[1],(e2[2]+z)*scaleOffset-offset[2]);
+						positions.push((e3[0]+x)*scaleOffset-offset[0],(e3[1]+y)*scaleOffset-offset[1],(e3[2]+z)*scaleOffset-offset[2]);
+						indices.push(count);count++;
+						indices.push(count);count++;
+						indices.push(count);count++;
+						var e12 = vec3.create(); vec3.sub(e12,e2,e1);
+						var e13 = vec3.create(); vec3.sub(e13,e3,e1);
+						var normal = vec3.create(); vec3.cross(normal,e12,e13);
+						normals.push(normal[0],normal[1],normal[2]);
+						normals.push(normal[0],normal[1],normal[2]);
+						normals.push(normal[0],normal[1],normal[2]);
+					}
+				}
+			}
+		}
+		return {
+			positionsArray: positions,
+			normalsArray: normals,
+			indicesArray: indices,
+			num: count
+		}
+	}
+
+	this.init = function(gl){
+		//init program
+		var shaderProgram = initShaderProgram(gl,src.vs,src.fs);
+		this.programInfo = {
+			program: shaderProgram,
+			attribLocations: {
+				vertexPosition: gl.getAttribLocation(shaderProgram, 'aVertexPosition'),
+				vertexNormal: gl.getAttribLocation(shaderProgram, 'aVertexNormal'),
+			},
+			uniformLocations: {
+				projectionMatrix: gl.getUniformLocation(shaderProgram, 'uProjectionMatrix'),
+				modelViewMatrix: gl.getUniformLocation(shaderProgram,'uModelViewMatrix'),
+				normalMatrix: gl.getUniformLocation(shaderProgram,'uNormalMatrix'),
+			},
+		}
+		this.initBuffers(gl);
+	}
+
+	this.initBuffers = function(gl){
+		var size = 10;
+		this.density = this.generator(size);
+		var triangleArrays = this.genTriangles(this.threshold,5/size);
+		this.num = triangleArrays.num;
+
+		//console.log((triangleArrays.normalsArray));
+
+		//init buffers
+		var positionBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER,
+			new Float32Array(triangleArrays.positionsArray),
+			gl.STATIC_DRAW);
+		
+		var normalBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER,
+			new Float32Array(triangleArrays.normalsArray),
+			gl.STATIC_DRAW);
+		
+		var indexBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,
+			new Uint16Array(triangleArrays.indicesArray),
+			gl.STATIC_DRAW);
+		
+		this.buffers = {
+			position: positionBuffer,
+			normal: normalBuffer,
+			indices: indexBuffer,
+		};
+	}
+
+	this.reinitBuffers = function(gl){
+		gl.deleteBuffer(this.buffers.position);
+		gl.deleteBuffer(this.buffers.normal);
+		gl.deleteBuffer(this.buffers.indices);
+		this.initBuffers(gl);
+	}
+
+	this.increasing = true
+	this.update = function(dt){
+		this.time+=dt;
+		this.threshold = 0.5*(Math.cos(this.time/10.0)+1)/2;
+		//if(this.increasing) this.threshold += dt
+		//else this.threshold -=dt;
+		//if(this.threshold-dt<0 || this.threshold+dt>1) this.increasing = !this.increasing;
+	}
+	
+	this.render = function(gl,globalUniforms){
+		//if(Math.random()>0.7) this.reinitBuffers(gl);
+		this.reinitBuffers(gl);
+
+		// Tell WebGL how to pull out the positions from the position
+		// buffer into the vertexPosition attribute.
+		{
+			const numComponents = 3;  // pull out 3 values per iteration
+			const type = gl.FLOAT;    // the data in the buffer is 32bit floats
+			const normalize = false;  // don't normalize
+			const stride = 0;         // how many bytes to get from one set of values to the next
+										// 0 = use type and numComponents above
+			const offset = 0;         // how many bytes inside the buffer to start from
+			gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.position);
+			gl.vertexAttribPointer(
+				this.programInfo.attribLocations.vertexPosition,
+				numComponents,
+				type,
+				normalize,
+				stride,
+				offset);
+			gl.enableVertexAttribArray(this.programInfo.attribLocations.vertexPosition);
+		}
+
+		{
+			const numComponents = 3;  // pull out 3 values per iteration
+			const type = gl.FLOAT;    // the data in the buffer is 32bit floats
+			const normalize = true;   // normalize
+			const stride = 0;         // how many bytes to get from one set of values to the next
+										// 0 = use type and numComponents above
+			const offset = 0;         // how many bytes inside the buffer to start from
+			gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.normal);
+			gl.vertexAttribPointer(
+				this.programInfo.attribLocations.vertexNormal,
+				numComponents,
+				type,
+				normalize,
+				stride,
+				offset);
+			gl.enableVertexAttribArray(this.programInfo.attribLocations.vertexNormal);
+		}
+
+		// Tell WebGL which indices to use to index the vertices
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.buffers.indices);
+
+		// Tell WebGL to use our program when drawing
+
+		gl.useProgram(this.programInfo.program);
+
+		// Set the shader uniforms
+
+		gl.uniformMatrix4fv(
+			this.programInfo.uniformLocations.projectionMatrix,
+			false,
+			globalUniforms.projectionMatrix);
+		var viewMatrix = globalUniforms.camera.getViewMatrix();
+		gl.uniformMatrix4fv(
+			this.programInfo.uniformLocations.modelViewMatrix,
+			false,
+			viewMatrix);
+		var normalMatrix = mat4.create();
+		mat4.invert(normalMatrix,viewMatrix);
+		mat4.transpose(normalMatrix,normalMatrix);
+		gl.uniformMatrix4fv(
+			this.programInfo.uniformLocations.normalMatrix,
+			false,
+			normalMatrix);
+		
+		{
+			const offset = 0;
+			const type = gl.UNSIGNED_SHORT;
+			gl.drawElements(gl.TRIANGLES, this.num, type, offset);
+		}
+	}
+}
+
+function sphereDensityField(width=9){
+	var density = [];
+	for(var x = 0; x < width; x++){
+		density[x] = [];
+		for(var y = 0; y < width; y++){
+			density[x][y] = [];
+			for(var z = 0; z < width; z++){
+				var xd = x/width-0.5;
+				var yd = y/width-0.5;
+				var zd = z/width-0.5;
+				density[x][y][z]=0.5-(xd*xd+yd*yd+zd*zd);
+				//density[x][y][z]=1.0/(1.0+Math.pow(x-width/2,2)+Math.pow(y-width/2,2)+Math.pow(z-width/2,2));
+				//density[x][y][z]=Math.random();
+				//density[x][y][z]=Math.sin(xd)*Math.sin(yd)*Math.sin(zd);
+			}
+		}
+	}
+	return density;
+}

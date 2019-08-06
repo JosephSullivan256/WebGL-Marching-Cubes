@@ -2,13 +2,15 @@
 function TestModel(){
 	const src = {
 		vs: `
-			attribute vec4 aVertexPosition;
+			precision highp float;
+
+			attribute vec3 aVertexPosition;
 
 			uniform mat4 uModelViewMatrix;
 			uniform mat4 uProjectionMatrix;
 			
 			void main() {
-				gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
+				gl_Position = uProjectionMatrix * uModelViewMatrix * vec4(aVertexPosition,1.0);
 			}
 		`,
 		fs: `
@@ -46,15 +48,30 @@ function TestModel(){
 		var positionBuffer = gl.createBuffer();
 		gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 		gl.bufferData(gl.ARRAY_BUFFER,
-			new Float32Array([
+			/*new Float32Array([
 				-1.0,  1.0,
 				 1.0,  1.0,
 				-1.0, -1.0,
 				 1.0, -1.0
+			]),*/
+			new Float32Array([
+				2, 1.75, 2,
+				2, 2, 1.75,
+				1.75, 2, 2
 			]),
 			gl.STATIC_DRAW);
+		
+		var indexBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,
+			new Uint16Array([
+				0,1,2 //0,1,2,1,2,3
+			]),
+			gl.STATIC_DRAW);
+		
 		this.buffers = {
-			position: positionBuffer
+			position: positionBuffer,
+			indices: indexBuffer,
 		};
 	}
 
@@ -66,7 +83,7 @@ function TestModel(){
 		// Tell WebGL how to pull out the positions from the position
 		// buffer into the vertexPosition attribute.
 		{
-			const numComponents = 2;  // pull out 2 values per iteration
+			const numComponents = 3;  // pull out 3 values per iteration
 			const type = gl.FLOAT;    // the data in the buffer is 32bit floats
 			const normalize = false;  // don't normalize
 			const stride = 0;         // how many bytes to get from one set of values to the next
@@ -82,6 +99,9 @@ function TestModel(){
 				offset);
 			gl.enableVertexAttribArray(this.programInfo.attribLocations.vertexPosition);
 		}
+
+		// Tell WebGL which indices to use to index the vertices
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.buffers.indices);
 
 		// Tell WebGL to use our program when drawing
 
@@ -103,8 +123,9 @@ function TestModel(){
 		
 		{
 			const offset = 0;
-			const vertexCount = 4;
-			gl.drawArrays(gl.TRIANGLE_STRIP, offset, vertexCount);
+			const type = gl.UNSIGNED_SHORT;
+			const vertexCount = 3;
+			gl.drawElements(gl.TRIANGLES, vertexCount, type, offset);
 		}
 	}
 }

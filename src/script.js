@@ -10,11 +10,12 @@ function main(){
 		return;
 	}
 	
-	//var densityField = sphereDensityField();
-	var model = new TestModel();
-	model.init(gl);
-	var scene = new Scene(new GlobalUniforms(gl),[model]);
-	drawScene(gl,scene);
+	var mouseInfo = addEventsToElement(canvas);
+	
+	var marchingCubesModel = new MarchingCubesModel(sphereDensityField);
+	marchingCubesModel.init(gl);
+
+	var scene = new Scene(new GlobalUniforms(gl),[marchingCubesModel]);
 
 	var dt = 0;
 	var then = 0;
@@ -24,16 +25,19 @@ function main(){
 		dt = now-then;
 		then = now;
 
-		updateScene(scene,dt);
+		updateScene(scene,dt,mouseInfo);
 		drawScene(gl,scene);
 		window.requestAnimationFrame(loop);
 	}
 	window.requestAnimationFrame(loop);
 }
 
-function updateScene(scene,dt){
+function updateScene(scene,dt,mouseInfo){
 	scene.update(dt);
-	scene.globalUniforms.camera.rotate([dt,0.0]);
+	if(mouseInfo.down){
+		scene.globalUniforms.camera.rotate([-dt*mouseInfo.vel[0],dt*mouseInfo.vel[1]]);
+		mouseInfo.vel = [0,0];
+	}
 }
 
 function drawScene(gl,scene){
@@ -45,8 +49,6 @@ function drawScene(gl,scene){
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	
 	scene.render(gl);
-
-	var testModel = new TestModel();
 }
 
 function Scene(globalUniforms,models=[]){
@@ -84,18 +86,7 @@ function GlobalUniforms(gl){
 		zNear,
 		zFar);
 
-	// Set the drawing position to the "identity" point, which is
-	// the center of the scene.
-	this.modelViewMatrix = mat4.create();
-
-	// Now move the drawing position a bit to where we want to
-	// start drawing the square.
-
-	mat4.translate(this.modelViewMatrix,     // destination matrix
-		this.modelViewMatrix,     // matrix to translate
-		[-0.0, 0.0, -6.0]);  // amount to translate
-
-	this.camera = new OrbitingCamera([-0.0,0.0,-6.0],[0.0,0.0,0.0]);
+	this.camera = new OrbitingCamera([0.0,0.0,-10.0],[0.0,0.0,0.0]);
 }
 
 /*
