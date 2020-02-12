@@ -403,7 +403,7 @@ function MarchingCubesModel(generator0){
 	}
 
 	this.initBuffers = function(gl){
-		var size = 10;
+		var size = 50;
 		this.density = this.generator(size);
 		var triangleArrays = this.genTriangles(this.threshold,5/size);
 		this.num = triangleArrays.num;
@@ -528,7 +528,7 @@ function MarchingCubesModel(generator0){
 	}
 }
 
-function sphereDensityField(width=9){
+function sphereDensityField(width=20){
 	var density = [];
 	for(var x = 0; x < width; x++){
 		density[x] = [];
