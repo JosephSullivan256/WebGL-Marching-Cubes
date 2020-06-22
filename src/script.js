@@ -1,3 +1,7 @@
+vec2 = glMatrix.vec2;
+vec3 = glMatrix.vec3;
+mat4 = glMatrix.mat4;
+
 window.addEventListener("load",function(){
 	main();
 });

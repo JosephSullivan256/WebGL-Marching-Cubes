@@ -1,0 +1,28 @@
+{
+  "name": "webgl-marching-cubes",
+  "version": "1.0.0",
+  "description": "webgl implementation of marching cubes",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JosephSullivan256/WebGL-Marching-Cubes.git"
+  },
+  "keywords": [
+    "webgl"
+  ],
+  "author": "Joseph Sullivan",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/JosephSullivan256/WebGL-Marching-Cubes/issues"
+  },
+  "homepage": "https://github.com/JosephSullivan256/WebGL-Marching-Cubes#readme",
+  "dependencies": {
+    "gl-matrix": "^3.3.0"
+  }
+}
