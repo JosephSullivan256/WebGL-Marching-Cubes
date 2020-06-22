@@ -1,4 +1,7 @@
-
+glmat = require("gl-matrix");
+vec3 = glmat.vec3;
+vec2 = glmat.vec2;
+mat4 = glmat.mat4;
 // //position = vector
 // //direction = rotation matrix
 // function Camera(position0,direction0){
@@ -17,10 +20,10 @@ function OrbitingCamera(position0,center0,up0=vec3.fromValues(0,1,0)){
     this.center = center0;
     this.up = up0;
     this.rotation = [0,0];
-    var matrix = mat4.create();
+    var matrix = glmat.mat4.create();
 
     this.getViewMatrix = function(){
-        var transformedPos = vec3.create();
+        var transformedPos = glmat.vec3.create();
         var xrot = mat4.create();
         mat4.fromXRotation(xrot,this.rotation[1]);
         var yrot = mat4.create();
@@ -38,3 +41,5 @@ function OrbitingCamera(position0,center0,up0=vec3.fromValues(0,1,0)){
         this.rotation[1] = Math.max(Math.min(this.rotation[1],Math.PI/2.0),-Math.PI/2.0)
     }
 }
+
+module.exports.OrbitingCamera = OrbitingCamera;

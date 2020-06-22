@@ -1,3 +1,4 @@
+util = require("./webgl_util.js");
 
 function TestModel(){
 	const src = {
@@ -31,7 +32,7 @@ function TestModel(){
 
 	this.init = function(gl){
 		//init program
-		var shaderProgram = initShaderProgram(gl,src.vs,src.fs);
+		var shaderProgram = util.initShaderProgram(gl,src.vs,src.fs);
 		this.programInfo = {
 			program: shaderProgram,
 			attribLocations: {

@@ -42,3 +42,5 @@ function initShaderProgram(gl, vsSource, fsSource) {
 
 	return shaderProgram;
 }
+
+module.exports.initShaderProgram = initShaderProgram;

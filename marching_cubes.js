@@ -1,3 +1,9 @@
+util = require("./webgl_util.js");
+glmat = require("gl-matrix");
+vec3 = glmat.vec3;
+vec2 = glmat.vec2;
+mat4 = glmat.mat4;
+
 var triTable = [
 	[-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
 	[0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
@@ -386,7 +392,7 @@ function MarchingCubesModel(generator0){
 
 	this.init = function(gl){
 		//init program
-		var shaderProgram = initShaderProgram(gl,src.vs,src.fs);
+		var shaderProgram = util.initShaderProgram(gl,src.vs,src.fs);
 		this.programInfo = {
 			program: shaderProgram,
 			attribLocations: {
@@ -547,3 +553,6 @@ function sphereDensityField(width=20){
 	}
 	return density;
 }
+
+module.exports.MarchingCubesModel = MarchingCubesModel;
+module.exports.sphereDensityField = sphereDensityField;

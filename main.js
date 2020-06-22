@@ -1,6 +1,13 @@
-vec2 = glMatrix.vec2;
-vec3 = glMatrix.vec3;
-mat4 = glMatrix.mat4;
+camera = require("./camera.js");
+cubes = require("./marching_cubes.js");
+events = require("./mouse_events.js");
+model = require("./test_model.js");
+util = require("./webgl_util.js");
+glmat = require("gl-matrix");
+
+vec3 = glmat.vec3;
+vec2 = glmat.vec2;
+mat4 = glmat.mat4;
 
 window.addEventListener("load",function(){
 	main();
@@ -14,9 +21,9 @@ function main(){
 		return;
 	}
 	
-	var mouseInfo = addEventsToElement(canvas);
+	var mouseInfo = events.addEventsToElement(canvas);
 	
-	var marchingCubesModel = new MarchingCubesModel(sphereDensityField);
+	var marchingCubesModel = new cubes.MarchingCubesModel(cubes.sphereDensityField);
 	marchingCubesModel.init(gl);
 
 	var scene = new Scene(new GlobalUniforms(gl),[marchingCubesModel]);
@@ -84,13 +91,13 @@ function GlobalUniforms(gl){
 
 	// note: glmatrix.js always has the first argument
 	// as the destination to receive the result.
-	mat4.perspective(this.projectionMatrix,
+	glmat.mat4.perspective(this.projectionMatrix,
 		fieldOfView,
 		aspect,
 		zNear,
 		zFar);
 
-	this.camera = new OrbitingCamera([0.0,0.0,-10.0],[0.0,0.0,0.0]);
+	this.camera = new camera.OrbitingCamera([0.0,0.0,-10.0],[0.0,0.0,0.0]);
 }
 
 /*

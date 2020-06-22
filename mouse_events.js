@@ -44,3 +44,5 @@ function addEventsToElement(ele){
     
     return mouseInfo;
 }
+
+module.exports.addEventsToElement = addEventsToElement;
