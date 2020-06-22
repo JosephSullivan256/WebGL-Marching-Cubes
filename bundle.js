@@ -62,7 +62,7 @@ window.addEventListener("load",function(){
 
 function main(){
 	const canvas = document.getElementById("canvas");
-	const gl = canvas.getContext("webgl");
+	const gl = canvas.getContext("webgl", { premultipliedAlpha: false });
 	if(gl===null){
 		alert("Unable to initialize WebGL. Your browser or machine may not support it.");
 		return;
@@ -99,7 +99,7 @@ function updateScene(scene,dt,mouseInfo){
 }
 
 function drawScene(gl,scene){
-	gl.clearColor(0.0, 0.0, 0.0, 1.0);
+	gl.clearColor(1.0, 1.0, 1.0, 0.0);
 	gl.clearDepth(1.0);
 	gl.enable(gl.DEPTH_TEST);
 	gl.depthFunc(gl.LEQUAL);
