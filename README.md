@@ -1,6 +1,6 @@
 # WebGL-Marching-Cubes
 
-View it online [here](https://josephsullivan256.github.io/WMC/index.html).
+View it online [here](https://partiallyordered.com/projects/marching-cubes).
 
 You know that feel when you have a 3D scalar field and you're just dying to render a surface level? Fear no more, [marching cubes](https://en.wikipedia.org/wiki/Marching_cubes) is here to save the day. Invented to visualize CT and MRI scans, now here's an implementation in javascript. The possibilities are endless. Maybe you can create funky underwater terrain as in this [nvidia gpu gem](https://developer.nvidia.com/gpugems/gpugems3/part-i-geometry/chapter-1-generating-complex-procedural-terrains-using-gpu). Who knows?
 
